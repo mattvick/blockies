@@ -62,69 +62,47 @@
 		return data;
 	}
 
-  function buildOpts(opts) {
-    var newOpts = {};
-
-		newOpts.size = opts.size || 8;
-		newOpts.scale = opts.scale || 4;
-		newOpts.seed = opts.seed || Math.floor((Math.random()*Math.pow(10,16))).toString(16);
-		newOpts.color = opts.color || createColor();
-		newOpts.bgcolor = opts.bgcolor || createColor();
-		newOpts.spotcolor = opts.spotcolor || createColor();
-
-		seedrand(newOpts.seed);
-
-    return newOpts;
-  }
-
-  function renderIcon(opts, canvas) {
-    var opts = buildOpts(opts || {});
-
-		var imageData = createImageData(opts.size);
+	function createCanvas(imageData, color, scale, bgcolor, spotcolor) {
+		var c = document.createElement('canvas');
 		var width = Math.sqrt(imageData.length);
+		c.width = c.height = width * scale;
 
-		canvas.width = canvas.height = opts.size * opts.scale;
-
-		var cc = canvas.getContext('2d');
-		cc.fillStyle = opts.bgcolor;
-		cc.fillRect(0, 0, canvas.width, canvas.height);
-		cc.fillStyle = opts.color;
+		var cc = c.getContext('2d');
+		cc.fillStyle = bgcolor;
+		cc.fillRect(0, 0, c.width, c.height);
+		cc.fillStyle = color;
 
 		for(var i = 0; i < imageData.length; i++) {
+			var row = Math.floor(i / width);
+			var col = i % width;
+			// if data is 2, choose spot color, if 1 choose foreground
+			cc.fillStyle = (imageData[i] == 1) ? color : spotcolor;
 
 			// if data is 0, leave the background
 			if(imageData[i]) {
-				var row = Math.floor(i / width);
-				var col = i % width;
-
-				// if data is 2, choose spot color, if 1 choose foreground
-			  cc.fillStyle = (imageData[i] == 1) ? opts.color : opts.spotcolor;
-
-				cc.fillRect(col * opts.scale, row * opts.scale, opts.scale, opts.scale);
+				cc.fillRect(col * scale, row * scale, scale, scale);
 			}
 		}
-    return canvas;
-  }
+
+		return c;
+	}
 
 	function createIcon(opts) {
-    var opts = buildOpts(opts || {});
-		var canvas = document.createElement('canvas');
+		opts = opts || {};
+		var size = opts.size || 8;
+		var scale = opts.scale || 4;
+		var seed = opts.seed || Math.floor((Math.random()*Math.pow(10,16))).toString(16);
 
-    renderIcon(opts, canvas);
+		seedrand(seed);
+
+		var color = opts.color || createColor();
+		var bgcolor = opts.bgcolor || createColor();
+		var spotcolor = opts.spotcolor || createColor();
+		var imageData = createImageData(size);
+		var canvas = createCanvas(imageData, color, scale, bgcolor, spotcolor);
 
 		return canvas;
 	}
 
-	var api = {
-    create: createIcon,
-    render: renderIcon
-  };
-
-  if (typeof module !== "undefined") {
-    module.exports = api;
-  }
-  if (typeof window !== "undefined") {
-    window.blockies = api;
-  }
-
+	window.blockies = {create: createIcon};
 })();
